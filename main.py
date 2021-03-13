@@ -38,7 +38,7 @@ def balance():
     return assets['free']
     
 def position(asset_balance):
-    if float(asset_balance) < trade_amount:
+    if float(asset_balance) < (trade_amount/2):
         return False
     else:
         return True
