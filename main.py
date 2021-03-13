@@ -65,7 +65,7 @@ def test_order(symbol, quantity, side, order_type=ORDER_TYPE_MARKET):
                 side= side,
                 type= order_type,
                 quantity= quantity)
-        print(f'Order created!\n\n{order_type}')
+        print(f'Order created!\n\n{order}')
     except:
         print('Order exception!')
         return False
@@ -151,8 +151,3 @@ if __name__ == '__main__':
     start_up()
     ws = websocket.WebSocketApp(socket, on_open=on_open, on_close=on_close, on_message=on_message)
     ws.run_forever()
-
-
-
-
-    
