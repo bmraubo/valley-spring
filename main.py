@@ -1,4 +1,4 @@
-import websocket, json, talib, numpy, config, logging
+import websocket, json, talib, numpy, config, logging, datetime, csv
 from binance.client import Client
 from binance.enums import *
 
@@ -14,6 +14,7 @@ rsi_oversold = 25
 
 asset_balance = 0
 in_position = False
+transaction_history = {}
 
 client = Client(config.API_KEY, config.API_SECRET)
 
@@ -37,6 +38,28 @@ def get_historical_data():
         logging.info('Historical Data Added Successfully...')
     else:
         print(f'Historical Data Incomplete...\nCurrent len(closes): {len(closes)} - Should be {10*klines_per_day}')
+
+#Transaction History
+
+def history(order):
+    #takes order RESPONSE JSON from binance, logs it and stores it in a CSV file
+    #updating dictionary
+    order_id = order["orderId"]
+    order_time = datetime.datetime.utcfromtimestamp(order["transactTime"] / 1000.0)
+    order_type = order["side"]
+    order_symbol = order["symbol"]
+    order_price = order["price"]
+    order_qty = order["executedQty"]
+    order_value = float(order_price)*float(order_qty)
+    order_commission = order_value*0.001
+    transaction_history[order_id] = {'ID':order_id, 'Time':order_time, 'Type':order_type,'Symbol':order_symbol,'Price':order_price,'Quantity':order_qty,'Value':order_value,'Commission':order_commission}
+    #appending to CSV file
+    with open('trade_history.csv', mode='a') as history_file:
+        fieldnames = ['ID','Time','Type','Symbol','Price','Quantity','Value','Commission']
+        writer = csv.DictWriter(history_file,fieldnames=fieldnames)
+        writer.writerow(transaction_history[order_id])
+    #log history update
+    logging.info('Order added to Trade History')        
 
 #position status
 
@@ -63,14 +86,16 @@ def trade_calc():
 #order logic
 
 def order(symbol, quantity, side, order_type=ORDER_TYPE_MARKET):
-    print('Creating Order...')
+    logging.info('Creating Order...')
     try:
         order = client.create_order(symbol = symbol,
                     side = side,
                     type = order_type,
                     quantity = quantity)
-        print(f'Order created!\n\n{order}')
-        logging.info(f'Order created!\n\n{order}')
+        print(f'Order created!\nSymbol: {order["symbol"]}\nOrder Type: {order["side"]}\nOrder ID: {order["orderId"]}\nPrice: {order["price"]}\nQuantity: {order["executedQty"]}\nStatus: {order["status"]}')
+        logging.info(f'Order created!\nSymbol: {order["symbol"]}\nOrder Type: {order["side"]}\nOrder ID: {order["orderId"]}\nPrice: {order["price"]}\nQuantity: {order["executedQty"]}\nStatus: {order["status"]}')
+        #add order to transaction history
+        history(order)
         return True
     except:
         print('Order exception!')
@@ -165,12 +190,14 @@ def on_message(ws, message):
     if comms == 1:
         print('recieving messages...')
         logging.info('recieving messages...')
-    elif comms == 56:
+    elif comms == 106:
         print('recieving messages...')
         logging.info('recieving messages...')
         comms = 6
     else:
         pass
+
+    #When the candle closes, run analysis and algorithm
 
     if is_candle_closed == True:
         print('candle closed - running analysis')
