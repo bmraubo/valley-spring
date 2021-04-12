@@ -17,6 +17,7 @@ in_position = False
 transaction_history = {}
 
 client = Client(config.API_KEY, config.API_SECRET)
+socket_open = False
 
 socket = 'wss://stream.binance.com:9443/ws/ethgbp@kline_2h'
 comms = 0
@@ -95,7 +96,10 @@ def order(symbol, quantity, side, order_type=ORDER_TYPE_MARKET):
         print(f'Order created!\nSymbol: {order["symbol"]}\nOrder Type: {order["side"]}\nOrder ID: {order["orderId"]}\nPrice: {order["price"]}\nQuantity: {order["executedQty"]}\nStatus: {order["status"]}')
         logging.info(f'Order created!\nSymbol: {order["symbol"]}\nOrder Type: {order["side"]}\nOrder ID: {order["orderId"]}\nPrice: {order["price"]}\nQuantity: {order["executedQty"]}\nStatus: {order["status"]}')
         #add order to transaction history
-        history(order)
+        try:
+            history(order)
+        except:
+            logging.error('Exception in history function')
         return True
     except:
         print('Order exception!')
@@ -165,10 +169,16 @@ def valley_spring(last_rsi):
 #socket processing functions
 
 def on_open(ws):
+    global socket_open
+    socket_open = True
     print(f'Websocket open for {trade_symbol} with {kline_interval} kline interval')
     logging.info(f'Websocket open for {trade_symbol} with {kline_interval} kline interval')
 
 def on_close(ws):
+    global socket_open
+    global comms
+    comms = 0 
+    socket_open = False
     print(f'\nWebsocket closed for {trade_symbol} with {kline_interval} kline interval')
     logging.info(f'Websocket closed for {trade_symbol} with {kline_interval} kline interval\n\n##########################################################\n')
 
@@ -233,5 +243,10 @@ def start_up():
 
 if __name__ == '__main__':
     start_up()
-    ws = websocket.WebSocketApp(socket, on_open=on_open, on_close=on_close, on_message=on_message)
-    ws.run_forever()
+    while socket_open == False:
+        try:
+            ws = websocket.WebSocketApp(socket, on_open=on_open, on_close=on_close, on_message=on_message)
+            ws.run_forever()
+        except:
+            print('Socket Connection Error')
+            logging.error('Socket Connection Error')
