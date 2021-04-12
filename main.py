@@ -2,8 +2,10 @@ import websocket, json, talib, numpy, config, logging, datetime, csv
 from binance.client import Client
 from binance.enums import *
 
+test_mode = 0
+
 closes = []
-starting_portfolio = 100
+starting_portfolio = 30
 trade_symbol = 'ETHGBP'
 
 kline_interval = '2h'
@@ -21,6 +23,25 @@ socket_open = False
 
 socket = 'wss://stream.binance.com:9443/ws/ethgbp@kline_2h'
 comms = 0
+
+#test mode
+
+def check_test_mode():
+    valid_input = 0
+    while valid_input == 0:
+        test_input = input('Would you like to run test mode? (y/n): ')
+        if test_input.upper() == 'Y':
+            print('TEST MODE ACTIVE')
+            logging.info('TEST MODE ACTIVE')
+            valid_input = 1
+            return 1
+        elif test_input.upper() == 'N':
+            print('LIVE TRADING!')
+            logging.info('LIVE TRADING!')
+            valid_input = 1
+            return 0
+        else:
+            print('Invalid Input, please try again...')
 
 #logging functions
 
@@ -145,7 +166,10 @@ def valley_spring(last_rsi):
     if (last_rsi < rsi_oversold) and in_position == False:
         print(f'BUY conditions met\nRSI: {last_rsi} < Threshold: {rsi_oversold}')
         #BUY ORDER ISSUED
-        order_succeeded = test_order(trade_symbol, trade_amount, 'buy')
+        if test_mode == 1:
+            order_succeeded = test_order(trade_symbol, trade_amount, 'buy')
+        else:
+            order_succeeded = order(trade_symbol, trade_amount, 'buy')
         if order_succeeded:
             print('Order Succeeded')
             logging.info('Order Succeeded')
@@ -154,7 +178,10 @@ def valley_spring(last_rsi):
     elif last_rsi > rsi_overbought and in_position == True:
         print(f'SELL conditions met\nRSI: {last_rsi} > Threshold: {rsi_overbought}')
         #SELL ORDER ISSUED
-        order_succeeded = test_order(trade_symbol, trade_amount, 'sell')
+        if test_mode == 1:
+            order_succeeded = test_order(trade_symbol, trade_amount, 'sell')
+        else:
+            order_succeeded = order(trade_symbol, trade_amount, 'sell')
         if order_succeeded:
             print('Order Succeeded')
             logging.info('Order Succeeded')
@@ -224,6 +251,8 @@ def start_up():
     logging.info('Starting up...')
     global asset_balance
     global in_position
+    #check test mode
+    #check_test_mode()
     #prepare historical data
     get_historical_data()
     #log, balance, position
@@ -236,8 +265,7 @@ def start_up():
     #run algo first time
     print('Startup completed. Running algorithm')
     logging.info('Startup completed. Running algorithm...')
-    valley_spring(last_rsi)
-        
+    valley_spring(last_rsi)        
 
 #Process
 
