@@ -2,11 +2,12 @@ import websocket, json, talib, numpy, config, logging, datetime, csv
 from binance.client import Client
 from binance.enums import *
 
-test_mode = 0
+test_mode = True
 
 closes = []
 starting_portfolio = 30
 trade_symbol = 'ETHGBP'
+trade_amount = 0
 
 kline_interval = '2h'
 klines_per_day = 24/2
@@ -26,7 +27,16 @@ comms = 0
 
 #test mode
 
-def check_test_mode():
+def test_mode_check():
+    if test_mode == True:
+        print('TEST MODE ACTIVE')
+        logging.info('TEST MODE ACTIVE')
+    else:
+        print('LIVE TRADING!')
+        logging.info('LIVE TRADING!')
+
+
+def test_switch():
     valid_input = 0
     while valid_input == 0:
         test_input = input('Would you like to run test mode? (y/n): ')
@@ -34,19 +44,18 @@ def check_test_mode():
             print('TEST MODE ACTIVE')
             logging.info('TEST MODE ACTIVE')
             valid_input = 1
-            return 1
+            return True
         elif test_input.upper() == 'N':
             print('LIVE TRADING!')
             logging.info('LIVE TRADING!')
             valid_input = 1
-            return 0
+            return False
         else:
             print('Invalid Input, please try again...')
 
 #logging functions
 
 logging.basicConfig(filename='app.log', filemode='a',level=logging.INFO, format='%(asctime)s - %(process)d  - %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
-    
 
 #get historical data
 
@@ -90,8 +99,8 @@ def balance():
     logging.info(f'Assets check: {assets["free"]}')
     return assets['free']
     
-def position(asset_balance,trade_amount):
-    if float(asset_balance) < (trade_amount/2):
+def position(asset_balance):
+    if float(asset_balance) < ((starting_portfolio/closes[-1])/2):
         logging.info('Not in Position')
         return False
     else:
@@ -154,19 +163,22 @@ def rsi_calc():
 
 def valley_spring(last_rsi):
     global in_position
+    global trade_amount
     #check asset balance
     asset_balance = balance()
     print(f'Asset Balance: {asset_balance}')
-    #adjust trade amount
-    trade_amount = trade_calc()
-    in_position = position(asset_balance, trade_amount)
+    
+    in_position = position(asset_balance)
     print(f'In Position: {in_position}')
     
     #check RSI status
     if (last_rsi < rsi_oversold) and in_position == False:
         print(f'BUY conditions met\nRSI: {last_rsi} < Threshold: {rsi_oversold}')
+        logging.info(f'BUY conditions met\nRSI: {last_rsi} < Threshold: {rsi_oversold}')
         #BUY ORDER ISSUED
-        if test_mode == 1:
+        #adjust trade amount
+        trade_amount = trade_calc()
+        if test_mode == True:
             order_succeeded = test_order(trade_symbol, trade_amount, 'buy')
         else:
             order_succeeded = order(trade_symbol, trade_amount, 'buy')
@@ -177,6 +189,7 @@ def valley_spring(last_rsi):
             print(in_position)
     elif last_rsi > rsi_overbought and in_position == True:
         print(f'SELL conditions met\nRSI: {last_rsi} > Threshold: {rsi_overbought}')
+        logging.info(f'SELL conditions met\nRSI: {last_rsi} > Threshold: {rsi_overbought}')
         #SELL ORDER ISSUED
         if test_mode == 1:
             order_succeeded = test_order(trade_symbol, trade_amount, 'sell')
@@ -207,7 +220,7 @@ def on_close(ws):
     comms = 0 
     socket_open = False
     print(f'\nWebsocket closed for {trade_symbol} with {kline_interval} kline interval')
-    logging.info(f'Websocket closed for {trade_symbol} with {kline_interval} kline interval\n\n##########################################################\n')
+    logging.info(f'Websocket closed for {trade_symbol} with {kline_interval} kline interval\n')
 
 def on_message(ws, message):
     global closes
@@ -247,18 +260,18 @@ def on_message(ws, message):
 #start up
 
 def start_up():
-    print('Starting up...')
-    logging.info('Starting up...')
+    print('\n##########################################################\n\nStarting up...')
+    logging.info('\n##########################################################\n\nStarting up...')
     global asset_balance
     global in_position
+    global trade_amount
     #check test mode
-    #check_test_mode()
+    test_mode_check()
     #prepare historical data
     get_historical_data()
     #log, balance, position
     asset_balance = balance()
-    trade_amount = trade_calc()
-    position(asset_balance, trade_amount)
+    position(asset_balance)
     
     last_rsi = rsi_calc()
     print(f'Last RSI: {last_rsi}')
