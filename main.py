@@ -131,9 +131,9 @@ def order(symbol, quantity, side, order_type=ORDER_TYPE_MARKET):
         except:
             logging.error('Exception in history function')
         return True
-    except:
-        print('Order exception!')
-        logging.error('Order exception!')
+    except Exception as e:
+        print(f'Order exception!\n\n{e}')
+        logging.error(f'Order exception!\n\n{e}')
         return False
 
 def test_order(symbol, quantity, side, order_type=ORDER_TYPE_MARKET):
