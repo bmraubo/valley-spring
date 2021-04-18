@@ -55,20 +55,23 @@ def test_switch():
 
 #logging functions
 
-logging.basicConfig(filename='app.log', filemode='a',level=logging.INFO, format='%(asctime)s - %(process)d  - %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
+logging.basicConfig(filename='app.log', filemode='a',level=logging.INFO, \
+    format='%(asctime)s - %(process)d  - %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 
 #get historical data
 
 def get_historical_data():
     global closes
-    historic_klines = client.get_historical_klines('ETHGBP', Client.KLINE_INTERVAL_2HOUR, "10 days ago UTC")
+    historic_klines = client.get_historical_klines('ETHGBP', \
+        Client.KLINE_INTERVAL_2HOUR, "10 days ago UTC")
     for kline in historic_klines:
         closes.append(float(kline[4]))
     if len(closes) >= 10*klines_per_day:
         print('Historical Data Added Successfully...')
         logging.info('Historical Data Added Successfully...')
     else:
-        print(f'Historical Data Incomplete...\nCurrent len(closes): {len(closes)} - Should be {10*klines_per_day}')
+        print(f'Historical Data Incomplete...\n\
+            Current len(closes): {len(closes)} - Should be {10*klines_per_day}')
 
 #Transaction History
 
@@ -83,7 +86,15 @@ def history(order):
     order_qty = order["executedQty"]
     order_value = float(order_price)*float(order_qty)
     order_commission = order_value*0.001
-    transaction_history[order_id] = {'ID':order_id, 'Time':order_time, 'Type':order_type,'Symbol':order_symbol,'Price':order_price,'Quantity':order_qty,'Value':order_value,'Commission':order_commission}
+    transaction_history[order_id] = {'ID':order_id, \
+        'Time':order_time,\
+        'Type':order_type,\
+        'Symbol':order_symbol,\
+        'Price':order_price,\
+        'Quantity':order_qty,\
+        'Value':order_value,\
+        'Commission':order_commission
+        }
     #appending to CSV file
     with open('trade_history.csv', mode='a') as history_file:
         fieldnames = ['ID','Time','Type','Symbol','Price','Quantity','Value','Commission']
@@ -111,8 +122,8 @@ def position(asset_balance):
 
 def trade_calc():
     trade_amount = (starting_portfolio*0.9)/closes[-1]
-    logging.info(f'Trade Amount set to {trade_amount}')
-    return trade_amount
+    logging.info(f'Trade Amount set to {round(trade_amount, 8)}')
+    return round(trade_amount, 8)
     
 #order logic
 
@@ -123,8 +134,20 @@ def order(symbol, quantity, side, order_type=ORDER_TYPE_MARKET):
                     side = side,
                     type = order_type,
                     quantity = quantity)
-        print(f'Order created!\nSymbol: {order["symbol"]}\nOrder Type: {order["side"]}\nOrder ID: {order["orderId"]}\nPrice: {order["price"]}\nQuantity: {order["executedQty"]}\nStatus: {order["status"]}')
-        logging.info(f'Order created!\nSymbol: {order["symbol"]}\nOrder Type: {order["side"]}\nOrder ID: {order["orderId"]}\nPrice: {order["price"]}\nQuantity: {order["executedQty"]}\nStatus: {order["status"]}')
+        print(f'Order created!\n\
+            Symbol: {order["symbol"]}\n\
+            Order Type: {order["side"]}\n\
+            Order ID: {order["orderId"]}\n\
+            Price: {order["price"]}\n\
+            Quantity: {order["executedQty"]}\n\
+            Status: {order["status"]}')
+        logging.info(f'Order created!\n\
+            Symbol: {order["symbol"]}\n\
+            Order Type: {order["side"]}\n\
+            Order ID: {order["orderId"]}\n\
+            Price: {order["price"]}\n\
+            Quantity: {order["executedQty"]}\n\
+            Status: {order["status"]}')
         #add order to transaction history
         try:
             history(order)
