@@ -124,6 +124,9 @@ def trade_calc():
     trade_amount = (starting_portfolio*0.9)/closes[-1]
     logging.info(f'Trade Amount set to {round(trade_amount, 8)}')
     return round(trade_amount, 8)
+
+def sell_value():
+    return float(balance()[:7])
     
 #order logic
 
@@ -168,9 +171,9 @@ def test_order(symbol, quantity, side, order_type=ORDER_TYPE_MARKET):
                 quantity= quantity)
         print(f'TEST Order created!\n\n{order}')
         logging.info(f'TEST Order created!\n\n{order}')
-    except:
-        print('TEST Order exception!')
-        logging.error('TEST Order exception!')
+    except Exception as e:
+        print(f'TEST Order exception!\n\n{e}')
+        logging.error(f'TEST Order exception!\n\n{e}')
         return False
 
 #technical analysis
@@ -190,7 +193,6 @@ def valley_spring(last_rsi):
     #check asset balance
     asset_balance = balance()
     print(f'Asset Balance: {asset_balance}')
-    
     in_position = position(asset_balance)
     print(f'In Position: {in_position}')
     
@@ -213,11 +215,11 @@ def valley_spring(last_rsi):
     elif last_rsi > rsi_overbought and in_position == True:
         print(f'SELL conditions met\nRSI: {last_rsi} > Threshold: {rsi_overbought}')
         logging.info(f'SELL conditions met\nRSI: {last_rsi} > Threshold: {rsi_overbought}')
-        #SELL ORDER ISSUED
+        #SELL ORDER ISSUED - uses account_balance value to avoid errors of quantity. 
         if test_mode == 1:
-            order_succeeded = test_order(trade_symbol, trade_amount, 'sell')
+            order_succeeded = test_order(trade_symbol, sell_value(), 'sell')
         else:
-            order_succeeded = order(trade_symbol, trade_amount, 'sell')
+            order_succeeded = order(trade_symbol, sell_value(), 'sell')
         if order_succeeded:
             print('Order Succeeded')
             logging.info('Order Succeeded')
