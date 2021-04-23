@@ -123,7 +123,7 @@ def position(asset_balance):
 def trade_calc():
     trade_amount = (starting_portfolio*0.9)/closes[-1]
     logging.info(f'Trade Amount set to {round(trade_amount, 8)}')
-    return round(trade_amount, 8)
+    return round(trade_amount, 5)
 
 def sell_value():
     return float(balance()[:7])
