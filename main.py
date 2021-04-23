@@ -1,4 +1,4 @@
-import websocket, json, talib, numpy, config, logging, datetime, csv
+import websocket, json, talib, numpy, config, logging, datetime, csv, argparse
 from binance.client import Client
 from binance.enums import *
 
@@ -27,6 +27,16 @@ comms = 0
 
 #test mode
 
+def test_attribute():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--live', help='Runs bot in live trading mode', action='store_true')
+    args = parser.parse_args()
+    if args.live is True:
+        return False
+    else:
+        return True
+
+
 def test_mode_check():
     if test_mode == True:
         print('TEST MODE ACTIVE')
@@ -35,23 +45,6 @@ def test_mode_check():
         print('LIVE TRADING!')
         logging.info('LIVE TRADING!')
 
-
-def test_switch():
-    valid_input = 0
-    while valid_input == 0:
-        test_input = input('Would you like to run test mode? (y/n): ')
-        if test_input.upper() == 'Y':
-            print('TEST MODE ACTIVE')
-            logging.info('TEST MODE ACTIVE')
-            valid_input = 1
-            return True
-        elif test_input.upper() == 'N':
-            print('LIVE TRADING!')
-            logging.info('LIVE TRADING!')
-            valid_input = 1
-            return False
-        else:
-            print('Invalid Input, please try again...')
 
 #logging functions
 
@@ -110,6 +103,7 @@ def balance():
     logging.info(f'Assets check: {assets["free"]}')
     return assets['free']
     
+
 def position(asset_balance):
     if float(asset_balance) < ((starting_portfolio/closes[-1])/2):
         logging.info('Not in Position')
@@ -124,6 +118,7 @@ def trade_calc():
     trade_amount = (starting_portfolio*0.9)/closes[-1]
     logging.info(f'Trade Amount set to {round(trade_amount, 8)}')
     return round(trade_amount, 5)
+
 
 def sell_value():
     return float(balance()[:7])
@@ -290,7 +285,9 @@ def start_up():
     global asset_balance
     global in_position
     global trade_amount
+    global test_mode
     #check test mode
+    test_mode = test_attribute()
     test_mode_check()
     #prepare historical data
     get_historical_data()
@@ -313,6 +310,6 @@ if __name__ == '__main__':
         try:
             ws = websocket.WebSocketApp(socket, on_open=on_open, on_close=on_close, on_message=on_message)
             ws.run_forever()
-        except:
-            print('Socket Connection Error')
-            logging.error('Socket Connection Error')
+        except Exception as e:
+            print(f'Socket Connection Error - {e}')
+            logging.error(f'Socket Connection Error - {e}')
