@@ -157,6 +157,7 @@ def order(symbol, quantity, side, order_type=ORDER_TYPE_MARKET):
         logging.error(f'Order exception!\n\n{e}')
         return False
 
+
 def test_order(symbol, quantity, side, order_type=ORDER_TYPE_MARKET):
     print('Creating TEST order....')
     try:
@@ -171,7 +172,9 @@ def test_order(symbol, quantity, side, order_type=ORDER_TYPE_MARKET):
         logging.error(f'TEST Order exception!\n\n{e}')
         return False
 
+
 #technical analysis
+
 
 def rsi_calc():
     if len(closes) > rsi_period:
@@ -180,7 +183,9 @@ def rsi_calc():
         logging.info(f'RSI calculated at {rsi[-1]}')
         return rsi[-1]
 
+
 #algo logic
+
 
 def valley_spring(last_rsi):
     global in_position
@@ -226,13 +231,16 @@ def valley_spring(last_rsi):
     logging.info('Valley Spring has run successfully')
     print('Valley Spring has run successfully')
 
+
 #socket processing functions
+
 
 def on_open(ws):
     global socket_open
     socket_open = True
     print(f'Websocket open for {trade_symbol} with {kline_interval} kline interval')
     logging.info(f'Websocket open for {trade_symbol} with {kline_interval} kline interval')
+
 
 def on_close(ws):
     global socket_open
@@ -241,6 +249,7 @@ def on_close(ws):
     socket_open = False
     print(f'\nWebsocket closed for {trade_symbol} with {kline_interval} kline interval')
     logging.info(f'Websocket closed for {trade_symbol} with {kline_interval} kline interval\n')
+
 
 def on_message(ws, message):
     global closes
@@ -277,7 +286,9 @@ def on_message(ws, message):
         print(f'RSI at last candle closed: {last_rsi}')
         valley_spring(last_rsi)
 
+
 #start up
+
 
 def start_up():
     print('\n##########################################################\n\nStarting up...')
@@ -302,7 +313,9 @@ def start_up():
     logging.info('Startup completed. Running algorithm...')
     valley_spring(last_rsi)        
 
+
 #Process
+
 
 if __name__ == '__main__':
     start_up()
