@@ -5,7 +5,7 @@ from binance.enums import *
 test_mode = True
 
 closes = []
-starting_portfolio = 30
+starting_portfolio = 150
 trade_symbol = 'ETHGBP'
 trade_amount = 0
 
