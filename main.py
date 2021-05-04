@@ -5,13 +5,13 @@ from binance.enums import *
 test_mode = True
 
 closes = []
-starting_portfolio = 150
-trade_symbol = 'ETHGBP'
+starting_portfolio = 150 #how much fiat you want to trade with
+trade_symbol = 'ETHGBP' #what you want to trade
 trade_amount = 0
 
-kline_interval = '2h'
-klines_per_day = 24/2
-rsi_period = 10
+kline_interval = 2 #this is the binance candle used in hours
+klines_per_day = 24/kline_interval
+rsi_period = 10 #rsi period calculated in no of kline intervals
 rsi_overbought = 75
 rsi_oversold = 25
 
@@ -28,6 +28,7 @@ comms = 0
 #test mode
 
 def test_attribute():
+    #self explanatory - allows bot to be started in live trading mode if satisfied with set up.
     parser = argparse.ArgumentParser()
     parser.add_argument('--live', help='Runs bot in live trading mode', action='store_true')
     args = parser.parse_args()
@@ -46,7 +47,7 @@ def test_mode_check():
         logging.info('LIVE TRADING!')
 
 
-#logging functions
+#logging setting up
 
 logging.basicConfig(filename='app.log', filemode='a',level=logging.INFO, \
     format='%(asctime)s - %(process)d  - %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
@@ -54,6 +55,7 @@ logging.basicConfig(filename='app.log', filemode='a',level=logging.INFO, \
 #get historical data
 
 def get_historical_data():
+    #obtains historical data from binanace to kickstart the algorithm on launch
     global closes
     historic_klines = client.get_historical_klines('ETHGBP', \
         Client.KLINE_INTERVAL_2HOUR, "10 days ago UTC")
@@ -99,12 +101,14 @@ def history(order):
 #position status
 
 def balance():
+    #checks free crypto balance for use in position check
     assets = client.get_asset_balance('ETH')
     logging.info(f'Assets check: {assets["free"]}')
     return assets['free']
     
 
 def position(asset_balance):
+    #this is a clumsy implementation - function checks if amount of crypto is less than half the portfolio amount
     if float(asset_balance) < ((starting_portfolio/closes[-1])/2):
         logging.info('Not in Position')
         return False
@@ -115,9 +119,10 @@ def position(asset_balance):
 #calculate trade amount
 
 def trade_calc():
+    #the trade amount moves with value of crypto - this calculates, with a buffer
     trade_amount = (starting_portfolio*0.9)/closes[-1]
-    logging.info(f'Trade Amount set to {round(trade_amount, 8)}')
-    return round(trade_amount, 5)
+    logging.info(f'Trade Amount set to {round(trade_amount, 8)}') 
+    return round(trade_amount, 5) #binance limitation on trade amounts
 
 
 def sell_value():
@@ -188,6 +193,7 @@ def rsi_calc():
 
 
 def valley_spring(last_rsi):
+    #main algorithm logic - runs on each candle close
     global in_position
     global trade_amount
     #check asset balance
@@ -238,8 +244,8 @@ def valley_spring(last_rsi):
 def on_open(ws):
     global socket_open
     socket_open = True
-    print(f'Websocket open for {trade_symbol} with {kline_interval} kline interval')
-    logging.info(f'Websocket open for {trade_symbol} with {kline_interval} kline interval')
+    print(f'Websocket open for {trade_symbol} with {kline_interval}h kline interval')
+    logging.info(f'Websocket open for {trade_symbol} with {kline_interval}h kline interval')
 
 
 def on_close(ws):
@@ -247,8 +253,8 @@ def on_close(ws):
     global comms
     comms = 0 
     socket_open = False
-    print(f'\nWebsocket closed for {trade_symbol} with {kline_interval} kline interval')
-    logging.info(f'Websocket closed for {trade_symbol} with {kline_interval} kline interval\n')
+    print(f'\nWebsocket closed for {trade_symbol} with {kline_interval}h kline interval')
+    logging.info(f'Websocket closed for {trade_symbol} with {kline_interval}h kline interval\n')
 
 
 def on_message(ws, message):
